@@ -2,10 +2,12 @@
  * transaction_manager.cpp
  *
  */
+
 #include "concurrency/transaction_manager.h"
 #include "table/table_heap.h"
 
 #include <cassert>
+
 namespace scudb {
 
 Transaction *TransactionManager::Begin() {
@@ -13,6 +15,8 @@ Transaction *TransactionManager::Begin() {
 
   if (ENABLE_LOGGING) {
     // TODO: write log and update transaction's prev_lsn here
+    LogRecord log(txn->GetTransactionId(), txn->GetPrevLSN(), LogRecordType::BEGIN);
+    txn->SetPrevLSN(log_manager_->AppendLogRecord(log));
   }
 
   return txn;
@@ -35,6 +39,14 @@ void TransactionManager::Commit(Transaction *txn) {
 
   if (ENABLE_LOGGING) {
     // TODO: write log and update transaction's prev_lsn here
+    LogRecord log(txn->GetTransactionId(), txn->GetPrevLSN(), LogRecordType::COMMIT);
+    txn->SetPrevLSN(log_manager_->AppendLogRecord(log));
+
+    // ???
+    while(txn->GetPrevLSN() > log_manager_->GetPersistentLSN())
+    {
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
   }
 
   // release all the lock
@@ -72,6 +84,12 @@ void TransactionManager::Abort(Transaction *txn) {
 
   if (ENABLE_LOGGING) {
     // TODO: write log and update transaction's prev_lsn here
+    LogRecord log(txn->GetTransactionId(), txn->GetPrevLSN(), LogRecordType::ABORT);
+    txn->SetPrevLSN(log_manager_->AppendLogRecord(log));
+    while(txn->GetPrevLSN() > log_manager_->GetPersistentLSN())
+    {
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
   }
 
   // release all the lock

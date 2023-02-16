@@ -273,7 +273,7 @@ GITCOMMAND:FILEPATH=/usr/bin/git
 MAKECOMMAND:STRING=/opt/clion/clion-2022.2.4/bin/cmake/linux/bin/cmake --build . --config "${CTEST_CONFIGURATION_TYPE}" -- -i
 
 //Path to the memory checking command, used for memory error detection.
-MEMORYCHECK_COMMAND:FILEPATH=MEMORYCHECK_COMMAND-NOTFOUND
+MEMORYCHECK_COMMAND:FILEPATH=/usr/bin/valgrind
 
 //File that contains suppressions for the memory checker
 MEMORYCHECK_SUPPRESSIONS_FILE:FILEPATH=

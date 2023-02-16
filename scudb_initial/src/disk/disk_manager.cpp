@@ -1,6 +1,12 @@
 /**
  * disk_manager.cpp
+ *
+ * Disk manager takes care of the allocation and deallocation of pages within a
+ * database. It also performs read and write of pages to and from disk, and
+ * provides a logical file layer within the context of a database management
+ * system.
  */
+
 #include <assert.h>
 #include <cstring>
 #include <iostream>
@@ -28,22 +34,18 @@ DiskManager::DiskManager(const std::string &db_file)
   }
   log_name_ = file_name_.substr(0, n) + ".log";
 
-  log_io_.open(log_name_,
-               std::ios::binary | std::ios::in | std::ios::app | std::ios::out);
+  log_io_.open(log_name_, std::ios::binary | std::ios::in | std::ios::app | std::ios::out);
   // directory or file does not exist
   if (!log_io_.is_open()) {
     log_io_.clear();
     // create a new file
-    log_io_.open(log_name_, std::ios::binary | std::ios::trunc | std::ios::app |
-                                std::ios::out);
+    log_io_.open(log_name_, std::ios::binary | std::ios::trunc | std::ios::app | std::ios::out);
     log_io_.close();
     // reopen with original mode
-    log_io_.open(log_name_, std::ios::binary | std::ios::in | std::ios::app |
-                                std::ios::out);
+    log_io_.open(log_name_, std::ios::binary | std::ios::in | std::ios::app | std::ios::out);
   }
 
-  db_io_.open(db_file,
-              std::ios::binary | std::ios::in | std::ios::out | std::ios::out);
+  db_io_.open(db_file, std::ios::binary | std::ios::in | std::ios::out);
   // directory or file does not exist
   if (!db_io_.is_open()) {
     db_io_.clear();
@@ -64,7 +66,7 @@ DiskManager::~DiskManager() {
  * Write the contents of the specified page into disk file
  */
 void DiskManager::WritePage(page_id_t page_id, const char *page_data) {
-  size_t offset = page_id * PAGE_SIZE;
+  size_t offset = page_id*PAGE_SIZE;
   // set write cursor to offset
   db_io_.seekp(offset);
   db_io_.write(page_data, PAGE_SIZE);
@@ -81,7 +83,7 @@ void DiskManager::WritePage(page_id_t page_id, const char *page_data) {
  * Read the contents of the specified page into the given memory area
  */
 void DiskManager::ReadPage(page_id_t page_id, char *page_data) {
-  int offset = page_id * PAGE_SIZE;
+  int offset = page_id*PAGE_SIZE;
   // check if read beyond file length
   if (offset > GetFileSize(file_name_)) {
     LOG_DEBUG("I/O error while reading");
@@ -117,7 +119,7 @@ void DiskManager::WriteLog(char *log_data, int size) {
   if (flush_log_f_ != nullptr)
     // used for checking non-blocking flushing
     assert(flush_log_f_->wait_for(std::chrono::seconds(10)) ==
-           std::future_status::ready);
+        std::future_status::ready);
 
   num_flushes_ += 1;
   // sequence write
@@ -140,8 +142,8 @@ void DiskManager::WriteLog(char *log_data, int size) {
  */
 bool DiskManager::ReadLog(char *log_data, int size, int offset) {
   if (offset >= GetFileSize(log_name_)) {
-    // LOG_DEBUG("end of log file");
-    // LOG_DEBUG("file size is %d", GetFileSize(log_name_));
+    LOG_DEBUG("end of log file");
+    LOG_DEBUG("file size is %d", GetFileSize(log_name_));
     return false;
   }
   log_io_.seekp(offset);
